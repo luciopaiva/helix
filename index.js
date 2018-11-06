@@ -19,7 +19,7 @@ class Helix {
         document.body.appendChild(this.canvas);
 
         const length = 41;
-        const colors = Array.from(Array(length), (e, i) => `hsl(${Math.floor(280 * (i / length))}, 80%, 60%)`);
+        const colors = Array.from(Array(length), (e, i) => 230 + Math.floor(70 * (i / length)));
 
         // this.head = new Particle(this.aspectRatio * Math.random(), Math.random(), Math.random());
         this.head = new Particle(0, 0, 0, colors[0]);
@@ -67,8 +67,7 @@ class Helix {
     toScreenCoordinates(vector) {
         return [
             this.halfWidth + vector.x * this.halfWidth,
-            this.halfHeight - vector.y * this.halfHeight,
-            Math.max(1, 1 + (vector.z + 1) / 2 * 50)
+            this.halfHeight - vector.y * this.halfHeight
         ];
     }
 
@@ -94,9 +93,13 @@ class Helix {
             .sort((a, b) => a.position.z - b.position.z);
 
         for (const particle of sortedParticles) {
-            this.ctx.fillStyle = particle.color;
+            const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
+            const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
+            this.ctx.fillStyle = `hsl(${particle.color}, ${saturation}%, ${brightness}%)`;
             this.ctx.beginPath();
-            this.ctx.arc(...this.toScreenCoordinates(particle.position), 0, TAU);
+            const [x, y] = this.toScreenCoordinates(particle.position);
+            const rasterizedSize = Math.max(1, 1 + (particle.position.z + 1) / 2 * 70);
+            this.ctx.arc(x, y, rasterizedSize, 0, TAU);
             this.ctx.fill();
         }
 
