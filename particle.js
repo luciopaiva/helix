@@ -1,8 +1,8 @@
 
 import Vector from "./vector.js";
 
-const STEERING_FORCE = 0.000005;
-const SPEED_LIMIT = 0.0004;
+const STEERING_FORCE = 0.5;
+const SPEED_LIMIT = 0.4;
 
 export default class Particle {
 
@@ -28,7 +28,7 @@ export default class Particle {
      * @param {Number} dt
      */
     update(now, dt) {
-        // dt /= 1000;
+        dt /= 1000;
         const distanceFromCenter = this.position.length;
 
         this.acceleration.clear();
@@ -36,7 +36,7 @@ export default class Particle {
 
         // ToDo this should be a parameter
         if (distanceFromCenter > 0.5) {  // too far from center - repel it
-            this.repulsion.set(this.position).normalize().scale(-distanceFromCenter * 0.00001);
+            this.repulsion.set(this.position).normalize().scale(-distanceFromCenter * 0.8);
             this.acceleration.add(this.repulsion);
         }
 
@@ -57,16 +57,16 @@ export default class Particle {
      * @param {Particle} leader
      */
     follow(now, dt, leader) {
-        // dt /= 1000;  // convert to seconds
+        dt /= 1000;  // convert to seconds
 
         this.acceleration.clear();
 
         const distance = Vector.subtract(leader.position, this.position, this.desiredVelocity).length;
-        if (distance > 0.001) {  // maximum distance reached - apply force
+        if (distance > 0.005) {  // maximum distance reached - apply force
             this.desiredVelocity.normalize().scale(SPEED_LIMIT);
 
             Vector.subtract(this.desiredVelocity, this.velocity, this.steer);
-            this.steer.scale(0.01);
+            this.steer.scale(15);
             this.acceleration.add(this.steer);
         }
 

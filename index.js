@@ -18,12 +18,12 @@ class Helix {
 
         document.body.appendChild(this.canvas);
 
-        const length = 21;
-        const colors = Array.from(Array(length), (e, i) => `hsl(${Math.floor(360 * (i / length))}, 80%, 60%)`);
+        const length = 41;
+        const colors = Array.from(Array(length), (e, i) => `hsl(${Math.floor(280 * (i / length))}, 80%, 60%)`);
 
         // this.head = new Particle(this.aspectRatio * Math.random(), Math.random(), Math.random());
         this.head = new Particle(0, 0, 0, colors[0]);
-        this.head.velocity.set(0.001, 0, 0);
+        this.head.velocity.set(0.1, 0, 0);
         this.nextHeadingChange = 0;
 
         this.body = Array.from(Array(length - 1), (e, i) =>
@@ -68,7 +68,7 @@ class Helix {
         return [
             this.halfWidth + vector.x * this.halfWidth,
             this.halfHeight - vector.y * this.halfHeight,
-            Math.max(1, 1 + (vector.z + 1) / 2 * 80)
+            Math.max(1, 1 + (vector.z + 1) / 2 * 50)
         ];
     }
 
@@ -80,7 +80,7 @@ class Helix {
 
         if (now >= this.nextHeadingChange) {
             this.head.setHeading(Math.random() * TAU, Math.random() * TAU);
-            this.nextHeadingChange = now + 1000;
+            this.nextHeadingChange = now + 2000;
         }
 
         this.head.update(now, dt);
