@@ -1,33 +1,80 @@
 
 import Vector from "./vector.js";
 
-const STEERING_FORCE = 0.00000004;
-const SPEED_LIMIT = 0.008;
+const STEERING_FORCE = 0.000005;
+const SPEED_LIMIT = 0.0004;
 
 export default class Particle {
 
-    constructor (x, y, z) {
+    constructor (x, y, z, color) {
         this.position = new Vector(x, y, z);
+        this.color = color;
+
         this.velocity = new Vector(0, 0, 0);
         this.acceleration = new Vector(0, 0, 0);
-        this.aux = new Vector();
+        this.heading = new Vector(0, 0, 0);
+        this.aux = new Vector(0, 0, 0);
+        this.desiredVelocity = new Vector(0, 0, 0);
+        this.steer = new Vector(0, 0, 0);
+        this.repulsion = new Vector(0, 0, 0);
     }
 
     setHeading(phi, theta) {
-        this.acceleration.setSphericalCoordinates(phi, theta).scale(STEERING_FORCE);
+        this.heading.setSphericalCoordinates(phi, theta).scale(STEERING_FORCE);
     }
 
-    update(dt) {
-        // v = v0 + at
-        Vector.scale(this.acceleration, dt, this.aux);
-        this.velocity.add(this.aux);
+    /**
+     * @param {Number} now
+     * @param {Number} dt
+     */
+    update(now, dt) {
+        // dt /= 1000;
+        const distanceFromCenter = this.position.length;
 
-        const speed = this.velocity.length;
-        if (speed > SPEED_LIMIT) {
-            this.velocity.normalize().scale(SPEED_LIMIT);
+        this.acceleration.clear();
+        this.acceleration.add(this.heading);
+
+        // ToDo this should be a parameter
+        if (distanceFromCenter > 0.5) {  // too far from center - repel it
+            this.repulsion.set(this.position).normalize().scale(-distanceFromCenter * 0.00001);
+            this.acceleration.add(this.repulsion);
         }
 
-        Vector.scale(this.velocity, dt / 1000, this.aux);
-        this.position.add(this.velocity);
+        this.acceleration.scale(dt);
+
+        // v = v0 + at
+        this.velocity.add(this.acceleration);
+        this.velocity.limit(SPEED_LIMIT);
+
+        // s = s0 + vt
+        Vector.scale(this.velocity, dt, this.aux);
+        this.position.add(this.aux);
+    }
+
+    /**
+     * @param {Number} now
+     * @param {Number} dt
+     * @param {Particle} leader
+     */
+    follow(now, dt, leader) {
+        // dt /= 1000;  // convert to seconds
+
+        this.acceleration.clear();
+
+        const distance = Vector.subtract(leader.position, this.position, this.desiredVelocity).length;
+        if (distance > 0.001) {  // maximum distance reached - apply force
+            this.desiredVelocity.normalize().scale(SPEED_LIMIT);
+
+            Vector.subtract(this.desiredVelocity, this.velocity, this.steer);
+            this.steer.scale(0.01);
+            this.acceleration.add(this.steer);
+        }
+
+        this.acceleration.scale(dt);
+        this.velocity.add(this.acceleration);
+        this.velocity.limit(SPEED_LIMIT);
+
+        Vector.scale(this.velocity, dt, this.aux);
+        this.position.add(this.aux);
     }
 }

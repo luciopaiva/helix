@@ -18,14 +18,29 @@ class Helix {
 
         document.body.appendChild(this.canvas);
 
+        const length = 21;
+        const colors = Array.from(Array(length), (e, i) => `hsl(${Math.floor(360 * (i / length))}, 80%, 60%)`);
+
         // this.head = new Particle(this.aspectRatio * Math.random(), Math.random(), Math.random());
-        this.head = new Particle(0, 0, 0);
+        this.head = new Particle(0, 0, 0, colors[0]);
         this.head.velocity.set(0.001, 0, 0);
         this.nextHeadingChange = 0;
+
+        this.body = Array.from(Array(length - 1), (e, i) =>
+            new Particle(0, 0, 0, colors[i + 1]));
+
+        this.isAttractedToCenter = true;
+        window.addEventListener("keypress", this.keypress.bind(this));
 
         this.updateFn = this.update.bind(this);
         this.previousTime = performance.now();
         this.update(this.previousTime);
+    }
+
+    keypress(event) {
+        switch (event.key) {
+            case "c": this.isAttractedToCenter = !this.isAttractedToCenter; break;
+        }
     }
 
     resize() {
@@ -45,9 +60,23 @@ class Helix {
         this.accelerationElem.innerText = "acc: " + this.head.acceleration.toString();
     }
 
+    /**
+     * @param {Vector} vector
+     * @returns {[Number, Number, Number]}
+     */
+    toScreenCoordinates(vector) {
+        return [
+            this.halfWidth + vector.x * this.halfWidth,
+            this.halfHeight - vector.y * this.halfHeight,
+            Math.max(1, 1 + (vector.z + 1) / 2 * 80)
+        ];
+    }
+
     update(now) {
         const dt = now - this.previousTime;
-        // this.ctx.clearRect(0, 0, this.width, this.height);
+        this.previousTime = now;
+
+        this.ctx.clearRect(0, 0, this.width, this.height);
 
         if (now >= this.nextHeadingChange) {
             this.head.setHeading(Math.random() * TAU, Math.random() * TAU);
@@ -56,11 +85,31 @@ class Helix {
 
         this.head.update(now, dt);
 
-        const x = this.halfWidth + this.head.position.x * this.halfWidth;
-        const y = this.halfHeight - this.head.position.y * this.halfHeight;
+        for (let i = 0; i < this.body.length; i++) {
+            const part = this.body[i];
+            part.follow(now, dt, i === 0 ? this.head : this.body[i - 1]);
+        }
 
-        this.ctx.fillStyle = "#3f6fff";
-        this.ctx.fillRect(x, y, 1, 1);
+        const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
+            .sort((a, b) => a.position.z - b.position.z);
+
+        for (const particle of sortedParticles) {
+            this.ctx.fillStyle = particle.color;
+            this.ctx.beginPath();
+            this.ctx.arc(...this.toScreenCoordinates(particle.position), 0, TAU);
+            this.ctx.fill();
+        }
+
+        // // center
+        // this.ctx.fillStyle = "red";
+        // this.ctx.fillRect(this.halfWidth, this.halfHeight, 1, 1);
+
+        // // containment circle
+        // this.ctx.strokeStyle = "red";
+        // this.ctx.lineWidth = 0.5;
+        // this.ctx.beginPath();
+        // this.ctx.arc(this.halfWidth, this.halfHeight, 0.9 * Math.min(this.halfHeight, this.halfWidth), 0, TAU);
+        // this.ctx.stroke();
 
         this.updateHUD();
 
