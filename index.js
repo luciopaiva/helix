@@ -94,8 +94,13 @@ class Helix {
             const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
                 .sort((a, b) => a.position.z - b.position.z);
 
+            const baseAngle = 0;
+            const windingFactor = TAU / sortedParticles.length;
+            let angle = baseAngle;
+
             for (let i = 0; i < sortedParticles.length; i++) {
                 const particle = sortedParticles[i];
+                angle += windingFactor;
 
                 const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
                 const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
@@ -104,10 +109,11 @@ class Helix {
                 const rasterizedSize = Math.max(10, 10 + (particle.position.z + 1) / 2 * 100);
                 const atomSize = Math.max(1, Math.floor(rasterizedSize / 5));
 
-                const leftX = x - rasterizedSize / 2;
-                const leftY = y;
-                const rightX = x + rasterizedSize / 2;
-                const rightY = y;
+                const radius = rasterizedSize / 2;
+                const leftX = Math.cos(angle) * radius + x;
+                const leftY = Math.sin(angle) * radius + y;
+                const rightX = -Math.cos(angle) * radius + x;
+                const rightY = -Math.sin(angle) * radius + y;
 
                 this.ctx.lineWidth = Math.max(1, atomSize / 5);
                 this.ctx.strokeStyle = this.ctx.fillStyle;
@@ -116,11 +122,14 @@ class Helix {
                 this.ctx.lineTo(rightX, rightY);
                 this.ctx.stroke();
 
+                this.ctx.strokeStyle = `hsl(${particle.color}, ${saturation}%, ${Math.max(0, brightness - 7)}%)`;
                 this.ctx.beginPath();
                 this.ctx.arc(leftX, leftY, atomSize, 0, TAU);
+                this.ctx.stroke();
                 this.ctx.fill();
                 this.ctx.beginPath();
                 this.ctx.arc(rightX, rightY, atomSize, 0, TAU);
+                this.ctx.stroke();
                 this.ctx.fill();
             }
 

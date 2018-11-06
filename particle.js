@@ -62,11 +62,11 @@ export default class Particle {
         this.acceleration.clear();
 
         const distance = Vector.subtract(leader.position, this.position, this.desiredVelocity).length;
-        if (distance > 0.005) {  // maximum distance reached - apply force
+        if (distance > 0.01) {  // maximum distance reached - apply force
             this.desiredVelocity.normalize().scale(SPEED_LIMIT);
 
             Vector.subtract(this.desiredVelocity, this.velocity, this.steer);
-            this.steer.scale(15);
+            this.steer.scale(12);
             this.acceleration.add(this.steer);
         }
 
