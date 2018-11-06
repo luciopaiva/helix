@@ -30,8 +30,9 @@ class Helix {
         this.body = Array.from(Array(length - 1), (e, i) =>
             new Particle(0, 0, 0, colors[i + 1]));
 
-        this.isAttractedToCenter = true;
         window.addEventListener("keypress", this.keypress.bind(this));
+
+        this.isRunning = true;
 
         this.updateFn = this.update.bind(this);
         this.previousTime = performance.now();
@@ -40,7 +41,7 @@ class Helix {
 
     keypress(event) {
         switch (event.key) {
-            case "c": this.isAttractedToCenter = !this.isAttractedToCenter; break;
+            case " ": this.isRunning = !this.isRunning;
         }
     }
 
@@ -76,46 +77,48 @@ class Helix {
         const dt = Math.min(FRAME_DURATION_IN_MILLIS, now - this.previousTime);
         this.previousTime = now;
 
-        this.ctx.clearRect(0, 0, this.width, this.height);
+        if (this.isRunning) {
+            this.ctx.clearRect(0, 0, this.width, this.height);
 
-        if (now >= this.nextHeadingChange) {
-            this.head.setHeading(Math.random() * TAU, Math.random() * TAU);
-            this.nextHeadingChange = now + 2000;
+            if (now >= this.nextHeadingChange) {
+                this.head.setHeading(Math.random() * TAU, Math.random() * TAU);
+                this.nextHeadingChange = now + 2000;
+            }
+
+            this.head.update(now, dt);
+
+            for (let i = 0; i < this.body.length; i++) {
+                const part = this.body[i];
+                part.follow(now, dt, i === 0 ? this.head : this.body[i - 1]);
+            }
+
+            const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
+                .sort((a, b) => a.position.z - b.position.z);
+
+            for (const particle of sortedParticles) {
+                const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
+                const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
+                this.ctx.fillStyle = `hsl(${particle.color}, ${saturation}%, ${brightness}%)`;
+                this.ctx.beginPath();
+                const [x, y] = this.toScreenCoordinates(particle.position);
+                const rasterizedSize = Math.max(1, 1 + (particle.position.z + 1) / 2 * 70);
+                this.ctx.arc(x, y, rasterizedSize, 0, TAU);
+                this.ctx.fill();
+            }
+
+            // // center
+            // this.ctx.fillStyle = "red";
+            // this.ctx.fillRect(this.halfWidth, this.halfHeight, 1, 1);
+
+            // // containment circle
+            // this.ctx.strokeStyle = "red";
+            // this.ctx.lineWidth = 0.5;
+            // this.ctx.beginPath();
+            // this.ctx.arc(this.halfWidth, this.halfHeight, 0.9 * Math.min(this.halfHeight, this.halfWidth), 0, TAU);
+            // this.ctx.stroke();
+
+            this.updateHUD();
         }
-
-        this.head.update(now, dt);
-
-        for (let i = 0; i < this.body.length; i++) {
-            const part = this.body[i];
-            part.follow(now, dt, i === 0 ? this.head : this.body[i - 1]);
-        }
-
-        const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
-            .sort((a, b) => a.position.z - b.position.z);
-
-        for (const particle of sortedParticles) {
-            const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
-            const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
-            this.ctx.fillStyle = `hsl(${particle.color}, ${saturation}%, ${brightness}%)`;
-            this.ctx.beginPath();
-            const [x, y] = this.toScreenCoordinates(particle.position);
-            const rasterizedSize = Math.max(1, 1 + (particle.position.z + 1) / 2 * 70);
-            this.ctx.arc(x, y, rasterizedSize, 0, TAU);
-            this.ctx.fill();
-        }
-
-        // // center
-        // this.ctx.fillStyle = "red";
-        // this.ctx.fillRect(this.halfWidth, this.halfHeight, 1, 1);
-
-        // // containment circle
-        // this.ctx.strokeStyle = "red";
-        // this.ctx.lineWidth = 0.5;
-        // this.ctx.beginPath();
-        // this.ctx.arc(this.halfWidth, this.halfHeight, 0.9 * Math.min(this.halfHeight, this.halfWidth), 0, TAU);
-        // this.ctx.stroke();
-
-        this.updateHUD();
 
         requestAnimationFrame(this.updateFn);
     }
