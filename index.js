@@ -2,6 +2,7 @@
 import Particle from "./particle.js";
 
 const TAU = Math.PI * 2;
+const FRAME_DURATION_IN_MILLIS = 1000 / 16;
 
 class Helix {
 
@@ -72,7 +73,7 @@ class Helix {
     }
 
     update(now) {
-        const dt = now - this.previousTime;
+        const dt = Math.min(FRAME_DURATION_IN_MILLIS, now - this.previousTime);
         this.previousTime = now;
 
         this.ctx.clearRect(0, 0, this.width, this.height);
