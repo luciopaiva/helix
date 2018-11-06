@@ -3,7 +3,7 @@ import Particle from "./particle.js";
 
 const TAU = Math.PI * 2;
 const FRAME_DURATION_IN_MILLIS = 1000 / 16;
-const HELIX_WINDING_FACTOR = 3;
+const HELIX_WINDING_FACTOR = 3.5;
 
 class Helix {
 
@@ -20,14 +20,13 @@ class Helix {
 
         document.body.appendChild(this.canvas);
 
-        const length = 40;
+        const length = 50;
         const colors = Array.from(Array(length), (e, i) => 230 + Math.floor(70 * (i / length)));
 
         const rotationDelta = HELIX_WINDING_FACTOR * TAU / length;
         let pairAngle = 0;
         this.head = new Particle(0, 0, 0, colors[0], pairAngle);
-        this.head.velocity.set(0.1, 0, 0);
-        this.nextHeadingChange = 0;
+        this.head.velocity.set(0, 0, 10);
 
         this.body = Array.from(Array(length - 1), (e, i) => {
             pairAngle += rotationDelta;
@@ -40,6 +39,7 @@ class Helix {
 
         this.updateFn = this.update.bind(this);
         this.previousTime = performance.now();
+        this.nextHeadingChange = this.previousTime + 1000;
         this.update(this.previousTime);
     }
 
@@ -101,6 +101,9 @@ class Helix {
 
             const baseAngle = now / 120;
             let angle = baseAngle;
+
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = "#3f4cb5";
 
             for (let i = 0; i < sortedParticles.length; i++) {
                 const particle = sortedParticles[i];
