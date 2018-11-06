@@ -22,7 +22,6 @@ class Helix {
         const length = 41;
         const colors = Array.from(Array(length), (e, i) => 230 + Math.floor(70 * (i / length)));
 
-        // this.head = new Particle(this.aspectRatio * Math.random(), Math.random(), Math.random());
         this.head = new Particle(0, 0, 0, colors[0]);
         this.head.velocity.set(0.1, 0, 0);
         this.nextHeadingChange = 0;
@@ -95,14 +94,33 @@ class Helix {
             const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
                 .sort((a, b) => a.position.z - b.position.z);
 
-            for (const particle of sortedParticles) {
+            for (let i = 0; i < sortedParticles.length; i++) {
+                const particle = sortedParticles[i];
+
                 const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
                 const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
                 this.ctx.fillStyle = `hsl(${particle.color}, ${saturation}%, ${brightness}%)`;
-                this.ctx.beginPath();
                 const [x, y] = this.toScreenCoordinates(particle.position);
-                const rasterizedSize = Math.max(1, 1 + (particle.position.z + 1) / 2 * 70);
-                this.ctx.arc(x, y, rasterizedSize, 0, TAU);
+                const rasterizedSize = Math.max(10, 10 + (particle.position.z + 1) / 2 * 100);
+                const atomSize = Math.max(1, Math.floor(rasterizedSize / 5));
+
+                const leftX = x - rasterizedSize / 2;
+                const leftY = y;
+                const rightX = x + rasterizedSize / 2;
+                const rightY = y;
+
+                this.ctx.lineWidth = Math.max(1, atomSize / 5);
+                this.ctx.strokeStyle = this.ctx.fillStyle;
+                this.ctx.beginPath();
+                this.ctx.moveTo(leftX, leftY);
+                this.ctx.lineTo(rightX, rightY);
+                this.ctx.stroke();
+
+                this.ctx.beginPath();
+                this.ctx.arc(leftX, leftY, atomSize, 0, TAU);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.arc(rightX, rightY, atomSize, 0, TAU);
                 this.ctx.fill();
             }
 
