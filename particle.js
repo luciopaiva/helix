@@ -6,9 +6,10 @@ const SPEED_LIMIT = 0.4;
 
 export default class Particle {
 
-    constructor (x, y, z, color) {
+    constructor (x, y, z, color, pairAngle) {
         this.position = new Vector(x, y, z);
         this.color = color;
+        this.pairAngle = pairAngle;
 
         this.velocity = new Vector(0, 0, 0);
         this.acceleration = new Vector(0, 0, 0);

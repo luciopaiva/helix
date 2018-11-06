@@ -3,6 +3,7 @@ import Particle from "./particle.js";
 
 const TAU = Math.PI * 2;
 const FRAME_DURATION_IN_MILLIS = 1000 / 16;
+const HELIX_WINDING_FACTOR = 3;
 
 class Helix {
 
@@ -19,15 +20,19 @@ class Helix {
 
         document.body.appendChild(this.canvas);
 
-        const length = 41;
+        const length = 40;
         const colors = Array.from(Array(length), (e, i) => 230 + Math.floor(70 * (i / length)));
 
-        this.head = new Particle(0, 0, 0, colors[0]);
+        const rotationDelta = HELIX_WINDING_FACTOR * TAU / length;
+        let pairAngle = 0;
+        this.head = new Particle(0, 0, 0, colors[0], pairAngle);
         this.head.velocity.set(0.1, 0, 0);
         this.nextHeadingChange = 0;
 
-        this.body = Array.from(Array(length - 1), (e, i) =>
-            new Particle(0, 0, 0, colors[i + 1]));
+        this.body = Array.from(Array(length - 1), (e, i) => {
+            pairAngle += rotationDelta;
+            return new Particle(0, 0, 0, colors[i + 1], pairAngle);
+        });
 
         window.addEventListener("keypress", this.keypress.bind(this));
 
@@ -94,13 +99,12 @@ class Helix {
             const sortedParticles = /** @type {Particle[]} */ [this.head, ...this.body]
                 .sort((a, b) => a.position.z - b.position.z);
 
-            const baseAngle = 0;
-            const windingFactor = TAU / sortedParticles.length;
+            const baseAngle = now / 120;
             let angle = baseAngle;
 
             for (let i = 0; i < sortedParticles.length; i++) {
                 const particle = sortedParticles[i];
-                angle += windingFactor;
+                angle = baseAngle + particle.pairAngle;
 
                 const brightness = Math.max(0, (particle.position.z + 1) / 2 * 80);
                 const saturation = Math.max(30, 30 + (particle.position.z + 1) / 2 * 60);
